@@ -4,6 +4,8 @@ import sys
 import os
 import cmd
 import string
+import socket
+import logging
 
 from server import Server
 from tbmanager import TensorBoardManager
@@ -17,6 +19,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--token", type=str, default=None)
+    parser.add_argument("--host", type=str, default=None)
     parser.add_argument("--port", type=int, default=6006)
 
     return parser.parse_args()
@@ -97,9 +100,30 @@ def main():
     mgr = TensorBoardManager()
     mgr.token = args.token
 
-    server = Server('127.0.0.1', args.port, mgr)
+    mgr.start_instance("test")
+    mgr.add_logdir("test", "test")
 
-    print(f"Serving on localhost:{args.port}/{args.token}")
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    log = logging.getLogger('tensorboard')
+    log.setLevel(logging.ERROR)
+
+    if args.host:
+        server = Server(args.host, args.port, mgr)
+        hostname = args.host
+    else:
+        # https://github.com/tensorflow/tensorboard/blob/d586c7454fb1bf0bcf2a6866e09d6f6a9774f666/tensorboard/program.py#L248
+        try:
+            # First try passing in a blank host (meaning all interfaces). This,
+            # unfortunately, defaults to IPv4 even if no IPv4 interface is available
+            # (yielding a socket.error).
+            server = Server('', args.port, mgr)
+        except socket.error:
+            # If a blank host didn't work, we explicitly request IPv6 interfaces.
+            server = Server('::', args.port, mgr)
+        hostname = socket.gethostname()
+
+    print(f"Serving on http://{hostname}:{args.port}/{args.token}")
 
     c = MyCMD(mgr)
     c.cmdloop()

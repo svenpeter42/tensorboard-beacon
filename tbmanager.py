@@ -9,6 +9,8 @@ from tensorboard.backend import application
 from tensorboard.default import get_plugins
 
 from werkzeug.exceptions import NotFound
+from werkzeug.utils import append_slash_redirect
+from werkzeug.wrappers import Response
 
 TBLogDir = namedtuple('TBLogDir', ['name', 'path', 'symlink'])
 
@@ -114,7 +116,7 @@ class TensorBoardInstance(object):
 
     def start(self):
         self.app = application.standard_tensorboard_wsgi(
-            self.tmpdir.name, True, 3000, get_plugins())
+            self.tmpdir.name, True, 10, get_plugins())
         return True
 
     def restart(self):
@@ -193,10 +195,24 @@ class TensorBoardManager(object):
 
     def __call__(self, environ, start_response):
         path = environ.get('PATH_INFO', '')
+        if len(path) == 0:
+            return append_slash_redirect(environ)(environ, start_response)
+        elif path[-1] != "/":
+            return append_slash_redirect(environ)(environ, start_response)
+
         path = path[1:].split('/')
 
-        if len(path) < 2:
+        if len(path) < 1:
             return NotFound().get_response(environ)(environ, start_response)
+        if len(path) < 2 or len(path[1]) == 0:
+            body = "<ul>"
+            for name in self._instances.keys():
+                if name == 'font-roboto':
+                    continue
+                body += f'<li><a href="{name}/">{name}</a>'
+            body += "</ul>"
+            response = Response(body, mimetype='text/html')
+            return response(environ, start_response)
 
         token, target = path[:2]
         tb_path = "/".join(path[2:])
