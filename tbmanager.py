@@ -85,10 +85,9 @@ class TensorBoardInstance(object):
         return False
 
     def add_logdir(self, path):
-        if path in self.logdirs:
-            return True
         if not os.path.isdir(path):
             return False
+        path = os.path.abspath(path)
         if path[-1] == "/":
             path = path[:-1]
 
@@ -116,16 +115,24 @@ class TensorBoardInstance(object):
     def start(self):
         self.app = application.standard_tensorboard_wsgi(
             self.tmpdir.name, True, 3000, get_plugins())
+        return True
 
     def restart(self):
         self.stop()
-        self.start()
+        return self.start()
 
     def stop(self):
         if self.app.multiplexer_thread:
             self.app.multiplexer_thread.stop_event.set()
             self.app.multiplexer_thread.join()
         self.app = None
+        return True
+
+    def get_list(self):
+        out = {}
+        for name, logdir in self.logdirs.items():
+            out[name] = logdir.path
+        return out
 
     def __call__(self, environ, start_response):
         if not self.app:
@@ -140,6 +147,8 @@ class TensorBoardManager(object):
         self.start_instance('font-roboto')
 
     def start_instance(self, name):
+        if name in self._instances:
+            return False
         self._instances[name] = TensorBoardInstance(name)
 
     def stop_instance(self, name):
@@ -161,8 +170,26 @@ class TensorBoardManager(object):
     def add_logdir(self, instance, path):
         if instance not in self._instances:
             return False
+        if instance == 'font-roboto':
+            return False
 
         return self._instances[instance].add_logdir(path)
+
+    def remove_logdir(self, instance, name):
+        if instance not in self._instances:
+            return False
+        if instance == 'font-roboto':
+            return False
+
+        return self._instances[instance].remove_logdir(name)
+
+    def get_list(self):
+        out = {}
+        for name, instance in self._instances.items():
+            if name == 'font-roboto':
+                continue
+            out[name] = instance.get_list()
+        return out
 
     def __call__(self, environ, start_response):
         path = environ.get('PATH_INFO', '')
@@ -190,7 +217,8 @@ class TensorBoardManager(object):
 if __name__ == "__main__":
     mgr = TensorBoardManager()
     mgr.start_instance("test")
-    mgr.add_logdir("test", ".")
+    mgr.add_logdir("test", "test")
 
-    import werkzeug.serving
-    werkzeug.serving.run_simple('127.0.0.1', 31337, mgr)
+    print(mgr.get_list())
+    #import werkzeug.serving
+    #werkzeug.serving.run_simple('127.0.0.1', 31337, mgr)

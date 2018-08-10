@@ -32,6 +32,46 @@ class MyCMD(cmd.Cmd):
         self.mgr.token = token
         print(f"Set token to {token}")
 
+    def do_token(self, line):
+        print(f"Current token: {self.mgr.token}")
+
+    def do_list(self, line):
+        info = self.mgr.get_list()
+        for i_name, i_instance in info.items():
+            print(f"{i_name}")
+            for j_name, j_path in i_instance.items():
+                print(f"    {j_name}  ->  {j_path}")
+
+    def do_start(self, line):
+        name = ''.join(ch for ch in line if ch.isalnum())
+        self.mgr.start_instance(name)
+        print(f"Started {name}")
+
+    def do_stop(self, line):
+        name = ''.join(ch for ch in line if ch.isalnum())
+        self.mgr.stop_instance(name)
+        print(f"Stopped {name}")
+
+    def do_add(self, line):
+        line = line.split(' ')
+        if len(line) != 2:
+            print("Syntax: add [instance name] [base folder])")
+            return
+
+        instance, path = line
+        self.mgr.add_logdir(instance, path)
+        print("Done.")
+
+    def do_remove(self, line):
+        line = line.split(' ')
+        if len(line) != 2:
+            print("Syntax: remove [instance name] [name])")
+            return
+
+        instance, name = line
+        self.mgr.remove_logdir(instance, name)
+        print("Done.")
+
     def do_q(self, line):
         return True
 
