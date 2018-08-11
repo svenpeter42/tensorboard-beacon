@@ -26,6 +26,9 @@ def parse_args():
 
 
 class MyCMD(cmd.Cmd):
+    def _filter(self, ch):
+        return ''.join(ch for ch in ch if ch.isalnum() or ch in ['-'])
+
     def __init__(self, mgr):
         self.mgr = mgr
         super(MyCMD, self).__init__()
@@ -46,12 +49,12 @@ class MyCMD(cmd.Cmd):
                 print(f"    {j_name}  ->  {j_path}")
 
     def do_start(self, line):
-        name = ''.join(ch for ch in line if ch.isalnum())
+        name = self._filter(line)
         self.mgr.start_instance(name)
         print(f"Started {name}")
 
     def do_stop(self, line):
-        name = ''.join(ch for ch in line if ch.isalnum())
+        name = self._filter(line)
         self.mgr.stop_instance(name)
         print(f"Stopped {name}")
 
@@ -63,7 +66,7 @@ class MyCMD(cmd.Cmd):
 
         instance, path = line
         self.mgr.add_logdir(instance, path)
-        print("Done.")
+        print(f"Added {path} to {instance}.")
 
     def do_remove(self, line):
         line = line.split(' ')
