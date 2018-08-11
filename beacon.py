@@ -103,9 +103,6 @@ def main():
     mgr = TensorBoardManager()
     mgr.token = args.token
 
-    mgr.start_instance("test")
-    mgr.add_logdir("test", "test")
-
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
     log = logging.getLogger('tensorboard')
