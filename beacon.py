@@ -38,6 +38,13 @@ class MyCMD(cmd.Cmd):
         self.mgr = mgr
         super(MyCMD, self).__init__()
 
+    def _complete_instance_name(self, text):
+        suggestions = []
+        for name in self.mgr.get_list().keys():
+            if name.startswith(text):
+                suggestions.append(name)
+        return suggestions
+
     def do_set_token(self, line):
         token = ''.join(ch for ch in line if ch.isalnum())
         self.mgr.token = token
@@ -64,11 +71,7 @@ class MyCMD(cmd.Cmd):
         print(f"Stopped {name}")
 
     def complete_stop(self, text, line, begidx, endidx):
-        suggestions = []
-        for name in self.mgr.get_list().keys():
-            if name.startswith(text):
-                suggestions.append(name)
-        return suggestions
+        return self._complete_instance_name(text)
 
     def do_add(self, line):
         line = line.split(' ')
@@ -83,7 +86,7 @@ class MyCMD(cmd.Cmd):
     def complete_add(self, text, line, begidx, endidx):
         splitline = line.split(' ')
         if len(splitline) <= 2:
-            return self.complete_stop(text, line, begidx, endidx)
+            return self._complete_instance_name(text)
 
         info = self.mgr.get_list()
         instance_name = splitline[1]
@@ -101,6 +104,23 @@ class MyCMD(cmd.Cmd):
         instance, name = line
         self.mgr.remove_logdir(instance, name)
         print("Done.")
+
+    def complete_remove(self, text, line, begidx, endidx):
+        splitline = line.split(' ')
+        if len(splitline) <= 2:
+            return self._complete_instance_name(text)
+
+        info = self.mgr.get_list()
+        instance_name = splitline[1]
+        if instance_name not in info.keys():
+            return []
+
+        suggestions = []
+        info = info[instance_name]
+        for name in info.keys():
+            if name.startswith(text):
+                suggestions.append(name)
+        return suggestions
 
     def do_q(self, line):
         return True
