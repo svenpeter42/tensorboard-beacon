@@ -6,6 +6,8 @@ import cmd
 import string
 import socket
 import logging
+import glob
+import readline
 
 from server import Server
 from tbmanager import TensorBoardManager
@@ -32,6 +34,7 @@ class MyCMD(cmd.Cmd):
         return ''.join(ch for ch in ch if ch.isalnum() or ch in ['-'])
 
     def __init__(self, mgr):
+        readline.set_completer_delims(' \t\n')
         self.mgr = mgr
         super(MyCMD, self).__init__()
 
@@ -60,6 +63,13 @@ class MyCMD(cmd.Cmd):
         self.mgr.stop_instance(name)
         print(f"Stopped {name}")
 
+    def complete_stop(self, text, line, begidx, endidx):
+        suggestions = []
+        for name in self.mgr.get_list().keys():
+            if name.startswith(text):
+                suggestions.append(name)
+        return suggestions
+
     def do_add(self, line):
         line = line.split(' ')
         if len(line) != 2:
@@ -69,6 +79,18 @@ class MyCMD(cmd.Cmd):
         instance, path = line
         self.mgr.add_logdir(instance, path)
         print(f"Added {path} to {instance}.")
+
+    def complete_add(self, text, line, begidx, endidx):
+        splitline = line.split(' ')
+        if len(splitline) <= 2:
+            return self.complete_stop(text, line, begidx, endidx)
+
+        info = self.mgr.get_list()
+        instance_name = splitline[1]
+        if instance_name not in info.keys():
+            return []
+
+        return glob.glob(f'{text}*')
 
     def do_remove(self, line):
         line = line.split(' ')
