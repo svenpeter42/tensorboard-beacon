@@ -26,6 +26,8 @@ def parse_args():
 
 
 class MyCMD(cmd.Cmd):
+    prompt = '(tensorboard-beacon) '
+
     def _filter(self, ch):
         return ''.join(ch for ch in ch if ch.isalnum() or ch in ['-'])
 
@@ -89,6 +91,19 @@ class MyCMD(cmd.Cmd):
 
     def do_EOF(self, line):
         return True
+
+    def cmdloop(self, intro=None):
+        if intro:
+            print(intro)
+        while True:
+            try:
+                super(MyCMD, self).cmdloop(intro='')
+                break
+            except KeyboardInterrupt:
+                self.handle_ctrl_c()
+
+    def handle_ctrl_c(self):
+        print("Please use CTRL+D, exit, quit or q to quit.")
 
 
 def main():
