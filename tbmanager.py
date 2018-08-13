@@ -8,7 +8,7 @@ from collections import namedtuple
 from tensorboard.backend import application
 from tensorboard.default import get_plugins
 
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, Forbidden
 from werkzeug.utils import append_slash_redirect
 from werkzeug.wrappers import Response
 
@@ -203,9 +203,9 @@ class TensorBoardManager(object):
         path = path[1:].split('/')
 
         if len(path) < 1:
-            return NotFound().get_response(environ)(environ, start_response)
+            return Forbidden().get_response(environ)(environ, start_response)
         if path[0] != self.token:
-            return NotFound().get_response(environ)(environ, start_response)
+            return Forbidden().get_response(environ)(environ, start_response)
 
         if len(path) < 2 or len(path[1]) == 0:
             body = "<ul>"
@@ -225,7 +225,7 @@ class TensorBoardManager(object):
             return self._instances['font-roboto'](environ, start_response)
 
         if token != self.token:
-            return NotFound().get_response(environ)(environ, start_response)
+            return Forbidden().get_response(environ)(environ, start_response)
         if target not in self._instances:
             return NotFound().get_response(environ)(environ, start_response)
 
