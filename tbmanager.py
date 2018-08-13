@@ -204,6 +204,9 @@ class TensorBoardManager(object):
 
         if len(path) < 1:
             return Forbidden().get_response(environ)(environ, start_response)
+        if path[0] == 'font-roboto':
+            environ['PATH_INFO'] = os.path.join('font-roboto', target)
+            return self._instances['font-roboto'](environ, start_response)
         if path[0] != self.token:
             return Forbidden().get_response(environ)(environ, start_response)
 
@@ -219,10 +222,6 @@ class TensorBoardManager(object):
 
         token, target = path[:2]
         tb_path = "/".join(path[2:])
-
-        if token == 'font-roboto':
-            environ['PATH_INFO'] = os.path.join('font-roboto', target)
-            return self._instances['font-roboto'](environ, start_response)
 
         if token != self.token:
             return Forbidden().get_response(environ)(environ, start_response)
