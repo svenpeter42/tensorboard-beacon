@@ -204,6 +204,9 @@ class TensorBoardManager(object):
 
         if len(path) < 1:
             return NotFound().get_response(environ)(environ, start_response)
+        if path[0] != self.token:
+            return NotFound().get_response(environ)(environ, start_response)
+
         if len(path) < 2 or len(path[1]) == 0:
             body = "<ul>"
             for name in self._instances.keys():
