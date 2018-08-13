@@ -231,13 +231,3 @@ class TensorBoardManager(object):
 
         environ['PATH_INFO'] = tb_path
         return self._instances[target](environ, start_response)
-
-
-if __name__ == "__main__":
-    mgr = TensorBoardManager()
-    mgr.start_instance("test")
-    mgr.add_logdir("test", "test")
-
-    print(mgr.get_list())
-    #import werkzeug.serving
-    #werkzeug.serving.run_simple('127.0.0.1', 31337, mgr)
