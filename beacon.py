@@ -31,13 +31,13 @@ def parse_args():
 class MyCMD(cmd.Cmd):
     prompt = '(tensorboard-beacon) '
 
-    def _filter(self, ch):
-        return ''.join(ch for ch in ch if ch.isalnum() or ch in ['-'])
-
     def __init__(self, mgr):
         readline.set_completer_delims(' \t\n')
         self.mgr = mgr
         super(MyCMD, self).__init__()
+
+    def _filter(self, ch):
+        return ''.join(ch for ch in ch if ch.isalnum() or ch in ['-'])
 
     def _complete_instance_name(self, text):
         suggestions = []
