@@ -138,6 +138,8 @@ class MyCMD(cmd.Cmd):
     def cmdloop(self, intro=None):
         if intro:
             print(intro)
+        elif self.intro:
+            print(self.intro)
         while True:
             try:
                 super(MyCMD, self).cmdloop(intro='')
@@ -191,10 +193,9 @@ def main():
         proto = 'https'
     else:
         proto = 'http'
-    print(f"Serving on {proto}://{hostname}:{args.port}/{args.token}")
 
     c = MyCMD(mgr)
-    c.cmdloop()
+    c.cmdloop(f"Serving on {proto}://{hostname}:{args.port}/{args.token}")
 
     server.stop()
 
