@@ -23,9 +23,25 @@ def parse_args():
     parser.add_argument("--token", type=str, default=None)
     parser.add_argument("--host", type=str, default=None)
     parser.add_argument("--port", type=int, default=6006)
-    parser.add_argument("--ssl-certbot", type=str, default=None)
 
-    return parser.parse_args()
+    parser.add_argument("--ssl-certbot", type=str, default=None)
+    parser.add_argument('--ssl-cert', type=str, default=None)
+    parser.add_argument('--ssl-key', type=str, default=None)
+
+    args = parser.parse_args()
+
+    if args.ssl_certbot and (args.ssl_cert or args.ssl_key):
+        parser.print_usage(file=sys.stderr)
+        sys.stderr.write(
+            "error: argument --ssl-certbot not allowed with --ssl-cert/--ssl-key\n")
+        sys.exit(1)
+
+    if (args.ssl_cert and not args.ssl_key) or (args.ssl_key and not args.ssl_cert):
+        parser.print_usage(file=sys.stderr)
+        sys.stderr.write("error: need both --ssl-cert and --ssl-key\n")
+        sys.exit(1)
+
+    return args
 
 
 class MyCMD(cmd.Cmd):
@@ -175,6 +191,8 @@ def main():
     if args.ssl_certbot:
         basedir = f"/etc/letsencrypt/live/{args.ssl_certbot}/"
         server.add_ssl_cert(basedir + "fullchain.pem", basedir + "privkey.pem")
+    elif args.ssl_cert and args.ssl_key:
+        server.add_ssl_cert(args.ssl_cert, args.ssl_key)
 
     if args.host:
         server.start(args.host, args.port)
