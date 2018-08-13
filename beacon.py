@@ -185,6 +185,8 @@ def main():
     log.setLevel(logging.ERROR)
     log = logging.getLogger('tensorboard')
     log.setLevel(logging.ERROR)
+    log = logging.getLogger('tensorboard-beacon')
+    log.setLevel(logging.ERROR)
 
     server = Server(mgr)
 

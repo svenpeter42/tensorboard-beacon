@@ -1,7 +1,9 @@
 import os
 import sys
 import threading
+import queue
 import tempfile
+import logging
 from collections import namedtuple
 
 
@@ -32,39 +34,51 @@ def my_start_reloading_multiplexer(multiplexer, path_to_run, load_interval):
     Raises:
       ValueError: If `load_interval` is negative.
     """
-    if load_interval < 0:
-        raise ValueError('load_interval is negative: %d' % load_interval)
+    if load_interval <= 0:
+        raise ValueError(
+            'load_interval is negative or zero: %d' % load_interval)
 
     # We don't call multiplexer.Reload() here because that would make
     # AddRunsFromDirectory block until the runs have all loaded.
-    def _reload(e):
-        while not e.isSet():
+    def _reload(q):
+        done = False
+        while not done:
             application.reload_multiplexer(multiplexer, path_to_run)
-            if load_interval == 0:
-                # Only load the multiplexer once. Do not continuously reload.
-                break
-            e.wait(load_interval)
 
-    e = threading.Event()
-    thread = threading.Thread(target=_reload, args=(e,), name='Reloader')
+            try:
+                msg = q.get(timeout=load_interval)
+            except queue.Empty:
+                continue
+
+            if msg == 'stop':
+                done = True
+            elif msg == 'reload':
+                pass
+            else:
+                l = logging.getLogger("tensorboard-beacon")
+                l.error(
+                    f"my_start_reloading_multiplexer: Unkown message in queue: {msg}")
+
+    q = queue.Queue()
+    thread = threading.Thread(target=_reload, args=(q,), name='Reloader')
     thread.daemon = True
-    thread.stop_event = e
+    thread.q = q
     thread.start()
     return thread
 
 
 def MyTensorBoardWSGIApp(logdir, plugins, multiplexer, reload_interval,
                          path_prefix=''):
+    if reload_interval <= 0:
+        raise ValueError(
+            'load_interval is negative or zero: %d' % load_interval)
+
     path_to_run = application.parse_event_files_spec(logdir)
-    if reload_interval >= 0:
-        # We either reload the multiplexer once when TensorBoard starts up, or we
-        # continuously reload the multiplexer.
-        thread = my_start_reloading_multiplexer(
-            multiplexer, path_to_run, reload_interval)
-    else:
-        thread = None
+    thread = my_start_reloading_multiplexer(
+        multiplexer, path_to_run, reload_interval)
     app = application.TensorBoardWSGI(plugins, path_prefix)
     app.multiplexer_thread = thread
+
     return app
 
 
@@ -101,6 +115,7 @@ class TensorBoardInstance(object):
         os.symlink(path, dst)
 
         self.logdirs[name] = TBLogDir(name, path, dst)
+        self.app.multiplexer_thread.q.put('reload')
 
     def remove_logdir(self, name):
         if name not in self.logdirs:
@@ -125,7 +140,7 @@ class TensorBoardInstance(object):
 
     def stop(self):
         if self.app.multiplexer_thread:
-            self.app.multiplexer_thread.stop_event.set()
+            self.app.multiplexer_thread.q.put('stop')
             self.app.multiplexer_thread.join()
         self.app = None
         return True
@@ -210,7 +225,7 @@ class TensorBoardManager(object):
             return Forbidden().get_response(environ)(environ, start_response)
 
         if len(path) < 2 or len(path[1]) == 0:
-            body = "<ul>"
+            body = "<h1>TensorBoard Instances</h1><br /><ul>"
             for name in self._instances.keys():
                 if name == 'font-roboto':
                     continue
