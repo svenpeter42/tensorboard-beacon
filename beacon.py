@@ -140,10 +140,12 @@ class MyCMD(cmd.Cmd):
             print(intro)
         elif self.intro:
             print(self.intro)
-        while True:
+
+        done = False
+        while not done:
             try:
                 super(MyCMD, self).cmdloop(intro='')
-                break
+                done = True
             except KeyboardInterrupt:
                 self.handle_ctrl_c()
 
