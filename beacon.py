@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--token", type=str, default=None)
     parser.add_argument("--host", type=str, default=None)
     parser.add_argument("--port", type=int, default=6006)
+    parser.add_argument("--ssl-certbot", type=str, default=None)
 
     return parser.parse_args()
 
@@ -165,8 +166,14 @@ def main():
     log = logging.getLogger('tensorboard')
     log.setLevel(logging.ERROR)
 
+    server = Server(mgr)
+
+    if args.ssl_certbot:
+        basedir = f"/etc/letsencrypt/live/{args.ssl_certbot}/"
+        server.add_ssl_cert(basedir + "fullchain.pem", basedir + "privkey.pem")
+
     if args.host:
-        server = Server(args.host, args.port, mgr)
+        server.start(args.host, args.port)
         hostname = args.host
     else:
         # https://github.com/tensorflow/tensorboard/blob/d586c7454fb1bf0bcf2a6866e09d6f6a9774f666/tensorboard/program.py#L248
@@ -174,13 +181,17 @@ def main():
             # First try passing in a blank host (meaning all interfaces). This,
             # unfortunately, defaults to IPv4 even if no IPv4 interface is available
             # (yielding a socket.error).
-            server = Server('', args.port, mgr)
+            server.start('', args.port)
         except socket.error:
             # If a blank host didn't work, we explicitly request IPv6 interfaces.
-            server = Server('::', args.port, mgr)
-        hostname = socket.gethostname()
+            server.start('::', args.port)
+        hostname = socket.getfqdn()
 
-    print(f"Serving on http://{hostname}:{args.port}/{args.token}")
+    if server.ssl:
+        proto = 'https'
+    else:
+        proto = 'http'
+    print(f"Serving on {proto}://{hostname}:{args.port}/{args.token}")
 
     c = MyCMD(mgr)
     c.cmdloop()
