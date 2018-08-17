@@ -9,8 +9,8 @@ import logging
 import glob
 import readline
 
-from server import Server
-from tbmanager import TensorBoardManager
+from .server import Server
+from .tbmanager import TensorBoardManager
 
 
 def generate_token():
@@ -44,13 +44,13 @@ def parse_args():
     return args
 
 
-class MyCMD(cmd.Cmd):
+class BeaconCMD(cmd.Cmd):
     prompt = '(tensorboard-beacon) '
 
     def __init__(self, mgr):
         readline.set_completer_delims(' \t\n')
         self.mgr = mgr
-        super(MyCMD, self).__init__()
+        super(BeaconCMD, self).__init__()
 
     def _filter(self, ch):
         return ''.join(ch for ch in ch if ch.isalnum() or ch in ['-'])
@@ -160,7 +160,7 @@ class MyCMD(cmd.Cmd):
         done = False
         while not done:
             try:
-                super(MyCMD, self).cmdloop(intro='')
+                super(BeaconCMD, self).cmdloop(intro='')
                 done = True
             except KeyboardInterrupt:
                 self.handle_ctrl_c()
@@ -216,7 +216,7 @@ def main():
     else:
         proto = 'http'
 
-    c = MyCMD(mgr)
+    c = BeaconCMD(mgr)
     c.cmdloop(f"Serving on {proto}://{hostname}:{args.port}/{args.token}")
 
     server.stop()
