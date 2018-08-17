@@ -3,10 +3,15 @@ Small server that can run multiple tensorboard instances at once and add/remove 
 
 Useful if you're running multiple distinct experiements and don't want them all to appear in the same web interface.
 
+# Installation with pip:
+```
+pip install git+https://github.com/svenpeter42/tensorboard-beacon.git@master
+```
+
 # Example usage:
 
 ```
-% python beacon.py --port 6006
+% beacon --port 6006
 2018-08-13 11:06:43.440048: I tensorflow/core/platform/cpu_feature_guard.cc:140] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
 Serving on http://HOSTNAME:6006/TOKEN
 (tensorboard-beacon) start test0
