@@ -42,4 +42,8 @@ setup(
     entry_points={
         'console_scripts': ['beacon=beacon:main'],
     },
+    install_requires= [
+        'werkzeug>=0.14.1',
+        'tensorboard>=1.8.0',
+    ],
 )
