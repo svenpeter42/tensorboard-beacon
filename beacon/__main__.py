@@ -139,6 +139,9 @@ class BeaconCMD(cmd.Cmd):
                 suggestions.append(name)
         return suggestions
 
+    def do_url(self, line):
+        print(self.intro)
+
     def do_q(self, line):
         return True
 
@@ -152,10 +155,9 @@ class BeaconCMD(cmd.Cmd):
         return True
 
     def cmdloop(self, intro=None):
-        if intro:
+        self.intro = intro
+        if self.intro:
             print(intro)
-        elif self.intro:
-            print(self.intro)
 
         done = False
         while not done:
